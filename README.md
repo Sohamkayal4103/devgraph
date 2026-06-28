@@ -53,16 +53,15 @@ An account-wide **pipeline funnel** (discovered → offers → outreach → adop
 
 ## Screenshots
 
-> Drop PNGs into [`screenshots/`](screenshots/) with these exact names and they render here automatically. See
-> [`screenshots/README.md`](screenshots/README.md) for a 60-second capture guide.
+Captured from the running app (Orange Slice as the demo product).
 
 | | |
 |---|---|
-| **Landing**<br>![Landing](screenshots/landing.png) | **Onboarding** (with the AI-agent docs link)<br>![Onboarding](screenshots/onboarding.png) |
-| **Dashboard** — pipeline funnel + products<br>![Dashboard](screenshots/dashboard.png) | **Discovery report** — competitors, B2B, universities, scored builders<br>![Report](screenshots/report.png) |
-| **Hackathon SDK scan** — who integrated your SDK<br>![Hackathon scan](screenshots/hackathon-scan.png) | **Tech-ecosystem graph**<br>![Graph](screenshots/graph.png) |
-| **Offers & outreach** — push to Orange Slice<br>![Outreach](screenshots/outreach.png) | **Product improvement** — share with engineering<br>![Improve](screenshots/improve.png) |
-| **Retention signals** — Fiber Tracker feed<br>![Signals](screenshots/signals.png) | **🚀 Viral Launch-in-a-box** — assets + CAC projection<br>![Launch](screenshots/launch.png) |
+| **Landing**<br>![Landing](screenshots/landing.png) | **Onboarding** — one form, incl. the AI-agent docs link<br>![Onboarding](screenshots/onboarding.png) |
+| **Dashboard** — the live pipeline funnel<br>![Dashboard](screenshots/dashboard.png) | **Discovery** — real competitors + cited public feedback<br>![Report](screenshots/report-competitors.png) |
+| **B2B targets** — named accounts + a dated buying signal<br>![B2B](screenshots/report-b2b.png) | **Scored builders** — real people via GitHub + Fiber<br>![Builders](screenshots/report-builders.png) |
+| **Offers & outreach** — push to Orange Slice<br>![Outreach](screenshots/outreach.png) | **Retention signals** — Fiber Tracker, expansion vs churn<br>![Signals](screenshots/signals.png) |
+| **🚀 Viral launch** — hook + CAC projection<br>![Launch](screenshots/launch.png) | **Launch assets** — copy-ready, every channel<br>![Launch assets](screenshots/launch-assets.png) |
 
 ---
 
