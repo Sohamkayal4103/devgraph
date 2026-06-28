@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# clerk configuration (can include secrets)
+/.clerk/
+
+# convex ai-agent skills (tooling scaffolding; reinstall with `npx convex ai-files install`)
+/.agents/
+/.claude/
+/skills-lock.json
