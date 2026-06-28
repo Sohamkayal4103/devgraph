@@ -63,3 +63,18 @@ export const featureValidator = v.object({
   rationale: v.string(), // which feedback signal it addresses
   impact: v.string(), // how it drives retention / sales / competitive win
 });
+
+// One hackathon project/team + whether they integrated the sponsor's SDK (from Devpost + GitHub SBOM).
+export const hackathonTeamValidator = v.object({
+  projectName: v.string(),
+  projectUrl: v.string(),
+  repoUrl: v.string(),
+  builtWith: v.array(v.string()),
+  integration: v.union(
+    v.literal("integrated"), // uses the sponsor's SDK
+    v.literal("competitor"), // uses a competitor's SDK
+    v.literal("none"), // repo found, no match
+    v.literal("no_repo"), // no GitHub repo linked
+  ),
+  detail: v.string(),
+});

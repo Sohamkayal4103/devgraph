@@ -3,8 +3,9 @@
 // Convex and renders each grounded section (use cases, competitors+feedback, real customers, upcoming events,
 // real named builders) with markdown formatting + source links, or a progress view while research runs.
 import Link from "next/link";
+import { useState } from "react";
 import { useParams } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { Markdown } from "@/components/markdown";
@@ -34,6 +35,12 @@ export default function ReportPage() {
             <h1 className="text-3xl font-semibold tracking-tight">Discovery report</h1>
             <div className="flex items-center gap-3">
               <StatusPill status={report.status} progress={report.progress} />
+              <Link
+                href={`/graph/${report.productId}`}
+                className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              >
+                Explore graph →
+              </Link>
               <Link
                 href={`/improve/${report.productId}`}
                 className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
@@ -149,6 +156,7 @@ export default function ReportPage() {
               ))}
             </Section>
           )}
+          <HackathonScan productId={report.productId} />
         </>
       )}
     </div>
@@ -232,5 +240,87 @@ function Chip({ href, children }: { href: string; children: React.ReactNode }) {
     >
       {children}
     </a>
+  );
+}
+
+// HackathonScan: scan a Devpost hackathon for teams that integrated this product's SDK. Params: productId.
+// Rendered at the bottom of the report; runs the scan (Devpost → GitHub SBOM) and shows each team's status.
+function HackathonScan({ productId }: { productId: Id<"products"> }) {
+  const scan = useQuery(api.hackathon.getHackathonScan, { productId });
+  const start = useMutation(api.hackathon.scanHackathon);
+  const [url, setUrl] = useState("");
+  const running = scan?.status === "running";
+
+  return (
+    <Section
+      title="Hackathon team scan"
+      subtitle="Which teams in a hackathon actually integrated this SDK — Devpost gallery → each repo's GitHub SBOM"
+    >
+      <div className="flex flex-wrap gap-2">
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://your-hackathon.devpost.com"
+          className="min-w-0 flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 dark:border-zinc-700 dark:bg-zinc-900"
+        />
+        <button
+          onClick={() => url.trim() && start({ productId, hackathonUrl: url.trim() })}
+          disabled={running}
+          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        >
+          {running ? "Scanning…" : "Scan teams"}
+        </button>
+      </div>
+
+      {running && (
+        <div className="mt-3">
+          <p className="text-xs text-zinc-500">
+            {scan.stage} · {scan.progress}%
+          </p>
+          <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+            <div className="h-2 rounded-full bg-indigo-600 transition-all duration-500" style={{ width: `${scan.progress}%` }} />
+          </div>
+        </div>
+      )}
+      {scan?.status === "error" && <p className="mt-3 text-sm text-red-500">{scan.error}</p>}
+      {scan?.status === "complete" && scan.teams && (
+        <div className="mt-4 flex flex-col gap-2">
+          {scan.teams.length === 0 && <p className="text-sm text-zinc-500">No teams found.</p>}
+          {scan.teams.map((t, i) => (
+            <TeamRow key={i} team={t} />
+          ))}
+        </div>
+      )}
+    </Section>
+  );
+}
+
+// TeamRow: one hackathon team + its SDK-integration badge + Devpost/GitHub links. Params: team. Used by HackathonScan.
+function TeamRow({
+  team,
+}: {
+  team: { projectName: string; projectUrl: string; repoUrl: string; builtWith: string[]; integration: string; detail: string };
+}) {
+  const badge =
+    team.integration === "integrated"
+      ? { label: "✓ Integrated", cls: "bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-400" }
+      : team.integration === "competitor"
+        ? { label: "Competitor SDK", cls: "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400" }
+        : { label: team.integration === "no_repo" ? "No repo" : "No match", cls: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400" };
+  return (
+    <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-medium">{team.projectName}</h3>
+        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.cls}`}>{badge.label}</span>
+      </div>
+      <p className="mt-1 text-xs text-zinc-500">{team.detail}</p>
+      {team.builtWith.length > 0 && (
+        <p className="mt-1 text-xs text-zinc-400">Built with: {team.builtWith.slice(0, 8).join(", ")}</p>
+      )}
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Chip href={team.projectUrl}>Devpost ↗</Chip>
+        {team.repoUrl && <Chip href={team.repoUrl}>GitHub ↗</Chip>}
+      </div>
+    </div>
   );
 }

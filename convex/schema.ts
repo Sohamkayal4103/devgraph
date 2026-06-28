@@ -9,6 +9,7 @@ import {
   eventValidator,
   builderValidator,
   featureValidator,
+  hackathonTeamValidator,
 } from "./validators";
 
 export default defineSchema({
@@ -75,6 +76,20 @@ export default defineSchema({
     error: v.optional(v.string()),
     summary: v.optional(v.string()),
     features: v.optional(v.array(featureValidator)),
+    createdAt: v.number(),
+  }).index("by_product", ["productId"]),
+
+  // One hackathon scan: which teams in a Devpost hackathon integrated the sponsor's SDK (via GitHub SBOM).
+  hackathonScans: defineTable({
+    productId: v.id("products"),
+    userId: v.string(),
+    status: v.union(v.literal("running"), v.literal("complete"), v.literal("error")),
+    progress: v.number(),
+    stage: v.string(),
+    error: v.optional(v.string()),
+    hackathonUrl: v.string(),
+    ourSdk: v.optional(v.array(v.string())),
+    teams: v.optional(v.array(hackathonTeamValidator)),
     createdAt: v.number(),
   }).index("by_product", ["productId"]),
 });
