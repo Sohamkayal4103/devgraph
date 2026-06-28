@@ -133,27 +133,30 @@ export default function ReportPage() {
           )}
 
           {report.builders && (
-            <Section title="Promising builders to reach out to" subtitle="Real people via GitHub + Fiber">
+            <Section
+              title="Promising builders to reach out to"
+              subtitle="Real people via GitHub + Fiber — ranked by lead score (match confidence × contactability)"
+            >
               {report.builders.length === 0 && (
                 <p className="text-sm text-zinc-500">No individual builders resolved for this query.</p>
               )}
-              {report.builders.map((b, i) => (
-                <Card
-                  key={i}
-                  heading={b.name}
-                  sub={b.confidence > 0 ? `match ${b.confidence}/10` : undefined}
-                >
-                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">{b.githubSignal}</p>
-                  <div className="mt-1.5">
-                    <Markdown>{b.whyPromising}</Markdown>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {b.githubUrl && <Chip href={b.githubUrl}>GitHub ↗</Chip>}
-                    {b.linkedinUrl && <Chip href={b.linkedinUrl}>LinkedIn ↗</Chip>}
-                    {b.email && <Chip href={`mailto:${b.email}`}>{b.email}</Chip>}
-                  </div>
-                </Card>
-              ))}
+              {[...report.builders]
+                .map((b) => ({ b, score: builderScore(b) }))
+                .sort((x, y) => y.score - x.score)
+                .map(({ b, score }, i) => (
+                  <Card key={i} heading={b.name} sub={b.confidence > 0 ? `match ${b.confidence}/10` : undefined}>
+                    <ScoreBadge score={score} rank={i + 1} />
+                    <p className="mt-2 text-xs font-medium uppercase tracking-wide text-zinc-400">{b.githubSignal}</p>
+                    <div className="mt-1.5">
+                      <Markdown>{b.whyPromising}</Markdown>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {b.githubUrl && <Chip href={b.githubUrl}>GitHub ↗</Chip>}
+                      {b.linkedinUrl && <Chip href={b.linkedinUrl}>LinkedIn ↗</Chip>}
+                      {b.email && <Chip href={`mailto:${b.email}`}>{b.email}</Chip>}
+                    </div>
+                  </Card>
+                ))}
             </Section>
           )}
           <HackathonScan productId={report.productId} />
@@ -240,6 +243,38 @@ function Chip({ href, children }: { href: string; children: React.ReactNode }) {
     >
       {children}
     </a>
+  );
+}
+
+// builderScore: a 0-100 lead score for a builder = Fiber match confidence (0-10, up to 50pts) + contactability
+// (reachable email +25, LinkedIn +15, GitHub +10). Params: b = a builder. Used to rank the builders list.
+function builderScore(b: {
+  confidence: number;
+  email: string;
+  linkedinUrl: string;
+  githubUrl: string;
+}): number {
+  let s = Math.max(0, Math.min(10, b.confidence)) * 5;
+  if (b.email) s += 25;
+  if (b.linkedinUrl) s += 15;
+  if (b.githubUrl) s += 10;
+  return Math.round(Math.min(100, s));
+}
+
+// ScoreBadge: a colored lead-score pill (Hot/Warm/Cold + rank). Params: score (0-100), rank (1-based). Used by
+// the builders section.
+function ScoreBadge({ score, rank }: { score: number; rank: number }) {
+  const tone =
+    score >= 70
+      ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+      : score >= 40
+        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+        : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400";
+  const heat = score >= 70 ? "Hot" : score >= 40 ? "Warm" : "Cold";
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tone}`}>
+      #{rank} · {heat} lead · {score}/100
+    </span>
   );
 }
 
