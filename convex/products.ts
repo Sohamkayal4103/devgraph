@@ -27,6 +27,7 @@ export const create = mutation({
   args: {
     companyName: v.string(),
     website: v.string(),
+    docsLink: v.optional(v.string()),
     productDescription: v.string(),
     targetCustomer: v.string(),
     individualBudget: v.number(),

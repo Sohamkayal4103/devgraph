@@ -20,6 +20,7 @@ export default defineSchema({
     userId: v.string(),
     companyName: v.string(),
     website: v.string(),
+    docsLink: v.optional(v.string()), // optional AI-agent docs / llms.txt URL; read during research to ground in real features
     productDescription: v.string(),
     targetCustomer: v.string(),
     individualBudget: v.number(),

@@ -22,6 +22,7 @@ export function OnboardingForm() {
     await createProduct({
       companyName: String(data.get("companyName") || ""),
       website: String(data.get("website") || ""),
+      docsLink: data.get("docsLink") ? String(data.get("docsLink")) : undefined,
       productDescription: String(data.get("productDescription") || ""),
       targetCustomer: String(data.get("targetCustomer") || ""),
       individualBudget: Number(data.get("individualBudget") || 0),
@@ -34,6 +35,12 @@ export function OnboardingForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <Field label="Company / product name" name="companyName" placeholder="Acme API" required />
       <Field label="Website" name="website" type="url" placeholder="https://acme.dev" />
+      <Field
+        label="Docs / llms.txt link for AI agents (optional)"
+        name="docsLink"
+        type="url"
+        placeholder="https://docs.acme.dev/llms.txt"
+      />
       <div className="flex flex-col gap-1.5">
         <label htmlFor="productDescription" className="text-sm font-medium">
           What does your product do?

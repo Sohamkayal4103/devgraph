@@ -1,4 +1,5 @@
-// research.ts — The discovery/research phase, grounded in REAL data (not model guesses):
+// research.ts — The discovery/research phase, grounded in REAL data (not model guesses). If the product supplies an
+// AI-agent docs / llms.txt link, we read it FIRST so every stage is grounded in the product's real documented features:
 //   • use cases ............ OpenAI (analytical; no external data needed)
 //   • competitors + feedback  OpenAI web search (live, with source URLs)
 //   • customers + sentiment   OpenAI web search (live, with source URLs)
@@ -78,6 +79,7 @@ export const startResearch = mutation({
       website: product.website,
       productDescription: product.productDescription,
       targetCustomer: product.targetCustomer,
+      docsLink: product.docsLink,
     });
     return reportId;
   },
@@ -153,14 +155,31 @@ export const runResearch = internalAction({
     website: v.string(),
     productDescription: v.string(),
     targetCustomer: v.string(),
+    docsLink: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<void> => {
-    const blurb = `Product: ${args.companyName} (${args.website || "no site"})
+    let blurb = `Product: ${args.companyName} (${args.website || "no site"})
 What it does: ${args.productDescription}
 Ideal customer: ${args.targetCustomer || "unspecified"}`;
     const today = new Date(Date.now()).toISOString().slice(0, 10);
 
     try {
+      // Stage 0 — read the product's own AI-agent docs (optional) so every downstream stage is grounded in the
+      // product's REAL, documented features, not just the one-line description.
+      if (args.docsLink) {
+        await ctx.runMutation(internal.research.patchReport, {
+          reportId: args.reportId, stage: "Reading product docs…", progress: 4,
+        });
+        const docsText = await fetchDocsText(args.docsLink);
+        if (docsText) {
+          const docs = await openAIChat<{ features: string }>(
+            `From this product's OWN documentation below, extract a concise, factual bullet summary of its key features and capabilities (specific; no marketing fluff). Use ONLY what the docs state.\n\nDOCS:\n${docsText}`,
+            strict({ features: STR }),
+          );
+          blurb += `\nDocumented features (from the product's own docs): ${docs.features}`;
+        }
+      }
+
       // Stage 1 — buildable use cases (analytical; OpenAI, no web).
       await ctx.runMutation(internal.research.patchReport, {
         reportId: args.reportId, stage: "Analyzing buildable use cases…", progress: 8,
@@ -348,6 +367,29 @@ async function fiberGithubToLinkedin(
     };
   } catch {
     return null;
+  }
+}
+
+// ---------- Product docs ----------
+
+// fetchDocsText: fetch the product's docs / llms.txt URL and return plain text (HTML stripped, truncated to keep
+// the prompt bounded). Returns "" on any failure so research proceeds (just ungrounded-by-docs) instead of
+// erroring. Params: url. Used by runResearch's Stage 0.
+async function fetchDocsText(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": "devgraph" } });
+    if (!res.ok) return "";
+    const body = await res.text();
+    const text = body
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&[a-z]+;/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return text.slice(0, 8000);
+  } catch {
+    return "";
   }
 }
 
