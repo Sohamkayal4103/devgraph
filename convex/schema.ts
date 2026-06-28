@@ -8,6 +8,8 @@ import {
   productFeedbackValidator,
   eventValidator,
   builderValidator,
+  businessTargetValidator,
+  universityTargetValidator,
   featureValidator,
   hackathonTeamValidator,
 } from "./validators";
@@ -39,6 +41,8 @@ export default defineSchema({
     productFeedback: v.optional(productFeedbackValidator),
     events: v.optional(v.array(eventValidator)),
     builders: v.optional(v.array(builderValidator)),
+    businesses: v.optional(v.array(businessTargetValidator)),
+    universities: v.optional(v.array(universityTargetValidator)),
     startedAt: v.number(),
     completedAt: v.optional(v.number()),
   })

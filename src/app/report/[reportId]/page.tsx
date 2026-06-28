@@ -111,6 +111,71 @@ export default function ReportPage() {
             </Section>
           )}
 
+          {report.businesses && (
+            <Section
+              title="B2B company targets"
+              subtitle="Real companies to sell into — grounded in a current buying signal, with sources"
+            >
+              {report.businesses.length === 0 && (
+                <p className="text-sm text-zinc-500">No verifiable company targets found for this query.</p>
+              )}
+              {report.businesses.map((b, i) => (
+                <Card key={i} heading={b.name} sub={b.segment}>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">{b.whatTheyDo}</p>
+                  <p className="mt-3 text-xs font-medium uppercase tracking-wide text-zinc-400">Why they fit</p>
+                  <div className="mt-1">
+                    <Markdown>{b.whyFit}</Markdown>
+                  </div>
+                  <p className="mt-3 text-xs font-medium uppercase tracking-wide text-zinc-400">Buying signal</p>
+                  <div className="mt-1">
+                    <Markdown>{b.buyingSignal}</Markdown>
+                  </div>
+                  {b.contactRole && (
+                    <p className="mt-3 text-sm text-zinc-500">
+                      <span className="font-medium text-zinc-700 dark:text-zinc-300">Who to reach:</span>{" "}
+                      {b.contactRole}
+                    </p>
+                  )}
+                  {b.website && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Chip href={b.website}>Website ↗</Chip>
+                    </div>
+                  )}
+                  <Sources urls={b.sources} />
+                </Card>
+              ))}
+            </Section>
+          )}
+
+          {report.universities && (
+            <Section
+              title="University & campus targets"
+              subtitle="Departments, labs, clubs & campus hackathons to seed adoption — with sources"
+            >
+              {report.universities.length === 0 && (
+                <p className="text-sm text-zinc-500">No verifiable university targets found for this query.</p>
+              )}
+              {report.universities.map((u, i) => (
+                <Card key={i} heading={u.name} sub={[u.program, u.location].filter(Boolean).join(" · ")}>
+                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">Why it fits</p>
+                  <div className="mt-1">
+                    <Markdown>{u.whyFit}</Markdown>
+                  </div>
+                  <p className="mt-3 text-xs font-medium uppercase tracking-wide text-zinc-400">How to activate</p>
+                  <div className="mt-1">
+                    <Markdown>{u.contactPath}</Markdown>
+                  </div>
+                  {u.url && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Chip href={u.url}>Page ↗</Chip>
+                    </div>
+                  )}
+                  <Sources urls={u.sources} />
+                </Card>
+              ))}
+            </Section>
+          )}
+
           {report.events && (
             <Section
               title="Upcoming events to sponsor / publicize at"

@@ -54,6 +54,8 @@ export const overview = query({
           reportId: report?._id ?? null,
           discoveryStatus: report?.status ?? "none",
           builders: report?.builders?.length ?? 0,
+          businesses: report?.businesses?.length ?? 0,
+          universities: report?.universities?.length ?? 0,
           competitors: report?.competitors?.length ?? 0,
           events: report?.events?.length ?? 0,
           useCases: report?.useCases?.length ?? 0,
@@ -73,7 +75,7 @@ export const overview = query({
     // Account funnel: total prospects discovered → offers chosen → messages drafted → adopters confirmed.
     const agg = rows.reduce(
       (acc, r) => ({
-        discovered: acc.discovered + r.builders + r.teamsScanned,
+        discovered: acc.discovered + r.builders + r.teamsScanned + r.businesses + r.universities,
         offers: acc.offers + r.offersSelected,
         messages: acc.messages + r.messages,
         integrated: acc.integrated + r.integrated,

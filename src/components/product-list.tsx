@@ -13,6 +13,8 @@ type PipelineStats = {
   reportId: Id<"reports"> | null;
   discoveryStatus: string;
   builders: number;
+  businesses: number;
+  universities: number;
   competitors: number;
   teamsScanned: number;
   integrated: number;
@@ -74,7 +76,7 @@ function PipelineFunnel({
   agg: { discovered: number; offers: number; messages: number; integrated: number };
 }) {
   const stages = [
-    { label: "Prospects discovered", value: agg.discovered, hint: "builders + hackathon teams" },
+    { label: "Prospects discovered", value: agg.discovered, hint: "builders, companies, campuses + teams" },
     { label: "Offers selected", value: agg.offers, hint: "deals you chose to run" },
     { label: "Outreach drafted", value: agg.messages, hint: "messages ready to send" },
     { label: "Adopters confirmed", value: agg.integrated, hint: "teams found using your SDK" },
@@ -141,9 +143,13 @@ function ProductCard({
         <Stat label="Budget / business" value={product.businessBudget} />
       </div>
 
-      {stats && (stats.builders > 0 || stats.teamsScanned > 0 || stats.offersTotal > 0 || stats.messages > 0) && (
-        <PipelineStrip productId={product._id} stats={stats} />
-      )}
+      {stats &&
+        (stats.builders > 0 ||
+          stats.businesses > 0 ||
+          stats.universities > 0 ||
+          stats.teamsScanned > 0 ||
+          stats.offersTotal > 0 ||
+          stats.messages > 0) && <PipelineStrip productId={product._id} stats={stats} />}
 
       <div className="mt-6 border-t border-zinc-100 pt-4 dark:border-zinc-800/60">
         <ResearchSection productId={product._id} />
@@ -157,6 +163,8 @@ function ProductCard({
 function PipelineStrip({ productId, stats }: { productId: Id<"products">; stats: PipelineStats }) {
   const chips = [
     { label: "Builders", value: stats.builders },
+    { label: "Companies", value: stats.businesses },
+    { label: "Campuses", value: stats.universities },
     { label: "Teams scanned", value: stats.teamsScanned },
     { label: "Integrated", value: stats.integrated, accent: stats.integrated > 0 },
     { label: "Offers", value: `${stats.offersSelected}/${stats.offersTotal}` },
