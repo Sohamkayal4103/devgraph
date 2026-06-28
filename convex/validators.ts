@@ -44,3 +44,22 @@ export const builderValidator = v.object({
   whyPromising: v.string(),
   confidence: v.number(),
 });
+
+// A generated deal/offer for a target. Stored fields (productId/userId/selected) live on the offers table;
+// this is the part the LLM generates and the insert mutation accepts.
+export const offerValidator = v.object({
+  targetType: v.union(v.literal("current_customer"), v.literal("builder")),
+  targetName: v.string(),
+  title: v.string(),
+  details: v.string(),
+  rationale: v.string(),
+});
+
+// A suggested next feature for the engineering team, grounded in customer/competitor feedback.
+export const featureValidator = v.object({
+  title: v.string(),
+  priority: v.string(), // P0 / P1 / P2
+  description: v.string(),
+  rationale: v.string(), // which feedback signal it addresses
+  impact: v.string(), // how it drives retention / sales / competitive win
+});

@@ -8,6 +8,9 @@
  * @module
  */
 
+import type * as improve from "../improve.js";
+import type * as openai from "../openai.js";
+import type * as outreach from "../outreach.js";
 import type * as products from "../products.js";
 import type * as research from "../research.js";
 import type * as validators from "../validators.js";
@@ -19,6 +22,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  improve: typeof improve;
+  openai: typeof openai;
+  outreach: typeof outreach;
   products: typeof products;
   research: typeof research;
   validators: typeof validators;

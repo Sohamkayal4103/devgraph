@@ -47,3 +47,13 @@ next-env.d.ts
 /.agents/
 /.claude/
 /skills-lock.json
+
+# editor / OS
+.vscode/
+.idea/
+.DS_Store
+
+# secrets — never commit (also covered by .env* above; explicit for safety in a public repo)
+.env
+.env.local
+.env.*.local
