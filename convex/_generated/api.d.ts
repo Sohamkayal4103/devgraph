@@ -9,6 +9,8 @@
  */
 
 import type * as products from "../products.js";
+import type * as research from "../research.js";
+import type * as validators from "../validators.js";
 
 import type {
   ApiFromModules,
@@ -18,6 +20,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   products: typeof products;
+  research: typeof research;
+  validators: typeof validators;
 }>;
 
 /**

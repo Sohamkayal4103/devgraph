@@ -1,5 +1,8 @@
 // products.ts — Convex backend functions for sponsor products: list the signed-in user's products and
 // create/delete them. Every function is scoped to the Clerk identity so users only touch their own rows.
+// products.ts — Convex backend functions for sponsor products: list the signed-in user's products and
+// create/delete them. Every function is scoped to the Clerk identity (tokenIdentifier) so users only touch
+// their own rows.
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
