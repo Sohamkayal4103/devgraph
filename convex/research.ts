@@ -63,7 +63,9 @@ export const startResearch = mutation({
       .withIndex("by_product", (q) => q.eq("productId", args.productId))
       .order("desc")
       .first();
-    if (latest && latest.status === "running") return latest._id;
+    // Reuse an in-flight run only if it's genuinely still going. Convex actions hard-cap at 600s, so a "running"
+    // report older than that was killed mid-flight — let a fresh run start instead of blocking on a dead one.
+    if (latest && latest.status === "running" && Date.now() - latest.startedAt < 11 * 60 * 1000) return latest._id;
 
     const reportId = await ctx.db.insert("reports", {
       productId: args.productId,
@@ -180,81 +182,50 @@ Ideal customer: ${args.targetCustomer || "unspecified"}`;
         }
       }
 
-      // Stage 1 — buildable use cases (analytical; OpenAI, no web).
+      // Stages 1–6 run CONCURRENTLY. Convex actions hard-cap at 600s and the gpt-5 web-search stages are slow, so
+      // running them sequentially overran the limit (it was killed mid-fetch). In parallel the wall-clock is ~one
+      // stage, and each section patches itself the moment it lands so the report fills in live.
       await ctx.runMutation(internal.research.patchReport, {
-        reportId: args.reportId, stage: "Analyzing buildable use cases…", progress: 8,
+        reportId: args.reportId, stage: "Researching the market across the web…", progress: 15,
       });
-      const s1 = await openAIChat<{ useCases: UseCase[] }>(
+      const patchSection = (fields: Record<string, unknown>) =>
+        ctx.runMutation(internal.research.patchReport, { reportId: args.reportId, ...fields });
+
+      const useCasesP = openAIChat<{ useCases: UseCase[] }>(
         `List 4 innovative, specific use cases a hackathon builder could build USING this product. ${blurb}`,
         strict({ useCases: arrayOf(strict({ title: STR, description: STR, whoBuildsIt: STR })) }),
-      );
-      await ctx.runMutation(internal.research.patchReport, {
-        reportId: args.reportId, useCases: s1.useCases, progress: 16,
-      });
+      ).then((r) => patchSection({ useCases: r.useCases }));
 
-      // Stage 2 — competitors + real public feedback (web search).
-      await ctx.runMutation(internal.research.patchReport, {
-        reportId: args.reportId, stage: "Searching competitors + real public feedback…", progress: 22,
-      });
-      const s2 = await openAIWeb<{ competitors: Competitor[] }>(
+      const competitorsP = openAIWeb<{ competitors: Competitor[] }>(
         `Using web search, find 4 real competitors to this product and summarize the ACTUAL public feedback developers give them (from Reddit, Hacker News, G2, X/Twitter, reviews). For each include the real source URLs you used. Do not invent feedback. ${blurb}`,
         strict({ competitors: arrayOf(strict({ name: STR, whatTheyDo: STR, publicFeedback: STR, sources: STR_ARR })) }),
-      );
-      await ctx.runMutation(internal.research.patchReport, {
-        reportId: args.reportId, competitors: s2.competitors, progress: 34,
-      });
+      ).then((r) => patchSection({ competitors: r.competitors }));
 
-      // Stage 3 — this product's real customers + sentiment (web search).
-      await ctx.runMutation(internal.research.patchReport, {
-        reportId: args.reportId, stage: "Finding real customers + public sentiment…", progress: 40,
-      });
-      const s3 = await openAIWeb<{ productFeedback: ProductFeedback }>(
+      const customersP = openAIWeb<{ productFeedback: ProductFeedback }>(
         `Using web search, find who ACTUALLY uses this specific product (named customers/companies if public) and the real public sentiment about it. Include source URLs. If there is genuinely no public information, say so honestly instead of inventing. ${blurb}`,
         strict({ productFeedback: strict({ currentCustomers: STR, publicSentiment: STR, sources: STR_ARR }) }),
-      );
-      await ctx.runMutation(internal.research.patchReport, {
-        reportId: args.reportId, productFeedback: s3.productFeedback, progress: 50,
-      });
+      ).then((r) => patchSection({ productFeedback: r.productFeedback }));
 
-      // Stage 4 — real B2B company targets to sell into (web search, grounded in a current buying signal).
-      await ctx.runMutation(internal.research.patchReport, {
-        reportId: args.reportId, stage: "Discovering B2B company targets…", progress: 54,
-      });
-      const s4 = await openAIWeb<{ businesses: BusinessTarget[] }>(
+      const businessesP = openAIWeb<{ businesses: BusinessTarget[] }>(
         `Today is ${today}. Using web search, find up to 6 REAL, named companies that are strong B2B customers for this product — pick companies whose CURRENT stack, hiring, or public engineering needs match what this product does. For EACH company include: name; segment (e.g. "Series B fintech", "AI infra startup", "enterprise SaaS"); what they do; why this product specifically fits them; the SPECIFIC buying signal you actually found (a real job posting, funding round, public tech-stack mention, conference talk, GitHub usage, engineering blog, etc.) — it MUST be RECENT (within ~the last 12 months) and you MUST state its date; the role to contact (e.g. "Head of Platform Engineering"); the company website; and the real source URLs. Each source URL must be the actual page where you found the buying signal (the job posting, funding announcement, blog post, etc.), NOT just the company homepage. Only include companies you can verify from a real source — do NOT invent or pad. If you cannot verify at least one real company with a genuine, recent, dated buying signal, return an EMPTY list rather than filling the quota with generic well-known companies — it is better to return 1 truly verified company (or none) than 6 plausible guesses. Prefer companies matching the ideal customer. ${blurb}`,
         strict({ businesses: arrayOf(strict({ name: STR, segment: STR, whatTheyDo: STR, whyFit: STR, buyingSignal: STR, contactRole: STR, website: STR, sources: STR_ARR })) }),
-      );
-      await ctx.runMutation(internal.research.patchReport, {
-        reportId: args.reportId, businesses: s4.businesses, progress: 64,
-      });
+      ).then((r) => patchSection({ businesses: r.businesses }));
 
-      // Stage 5 — universities / campus communities to seed adoption (web search, grounded, with sources).
-      await ctx.runMutation(internal.research.patchReport, {
-        reportId: args.reportId, stage: "Discovering university & campus targets…", progress: 68,
-      });
-      const s5 = await openAIWeb<{ universities: UniversityTarget[] }>(
+      const universitiesP = openAIWeb<{ universities: UniversityTarget[] }>(
         `Using web search, find up to 5 REAL universities / CS departments / research labs / student developer clubs / university hackathons that are strong adoption AND community-seeding targets for this product (student developers, research use, course adoption, campus ambassadors, hackathon sponsorship). For EACH include: name; the specific program/lab/club/course/hackathon; why it fits THIS product's specific value proposition and ideal customer (reference a concrete attribute of the program — not a generic claim that students like new tools); a concrete way to ACTIVATE them (a named faculty member/course, the club + how to reach it, a career fair, or sponsoring the hackathon); location; a URL; and the real source URLs. The activation path you give must itself be confirmed from a real source — do NOT invent professor names, courses, or club contacts; if you can only verify the school but not a concrete activation path, say so rather than fabricating one. Each source URL must evidence the specific program/lab/club/hackathon and the activation path, not just the university homepage. Do NOT list a school merely because it is famous: only include a target when a real source shows a concrete, product-specific fit. If you cannot find such verifiable, product-specific targets, return an EMPTY list rather than defaulting to well-known CS departments. ${blurb}`,
         strict({ universities: arrayOf(strict({ name: STR, program: STR, whyFit: STR, contactPath: STR, location: STR, url: STR, sources: STR_ARR })) }),
-      );
-      await ctx.runMutation(internal.research.patchReport, {
-        reportId: args.reportId, universities: s5.universities, progress: 78,
-      });
+      ).then((r) => patchSection({ universities: r.universities }));
 
-      // Stage 6 — real upcoming SF/Bay Area events (web search, dated, next ~month).
-      await ctx.runMutation(internal.research.patchReport, {
-        reportId: args.reportId, stage: "Searching upcoming Bay Area events…", progress: 82,
-      });
-      const s6 = await openAIWeb<{ events: EventItem[] }>(
+      const eventsP = openAIWeb<{ events: EventItem[] }>(
         `Today is ${today}. Using web search, find up to 5 REAL developer / startup / hackathon events in San Francisco or the Bay Area happening between today and ~1 month out, where this product could sponsor or get publicity. For each: exact name, date (YYYY-MM-DD or range), location, the event page URL, and why it's relevant to this product. Only include real events you can verify with a source URL — do not invent any. ${blurb}`,
         strict({ events: arrayOf(strict({ name: STR, date: STR, location: STR, url: STR, whyRelevant: STR })) }),
-      );
-      await ctx.runMutation(internal.research.patchReport, {
-        reportId: args.reportId, events: s6.events, progress: 88,
-      });
+      ).then((r) => patchSection({ events: r.events }));
 
-      // Stage 7 — promising builders: real people via GitHub + Fiber.
+      await Promise.all([useCasesP, competitorsP, customersP, businessesP, universitiesP, eventsP]);
+
+      // Builders last — real people via GitHub + Fiber (uses the docs-enriched blurb).
       await ctx.runMutation(internal.research.patchReport, {
-        reportId: args.reportId, stage: "Finding real builders (GitHub + Fiber)…", progress: 92,
+        reportId: args.reportId, stage: "Finding real builders (GitHub + Fiber)…", progress: 88,
       });
       const builders = await findBuilders(blurb);
       await ctx.runMutation(internal.research.patchReport, {
@@ -377,7 +348,11 @@ async function fiberGithubToLinkedin(
 // erroring. Params: url. Used by runResearch's Stage 0.
 async function fetchDocsText(url: string): Promise<string> {
   try {
-    const res = await fetch(url, { headers: { "User-Agent": "devgraph" } });
+    // Bound the fetch so a slow/hanging docs host can't eat the action's time budget.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(url, { headers: { "User-Agent": "devgraph" }, signal: controller.signal });
+    clearTimeout(timer);
     if (!res.ok) return "";
     const body = await res.text();
     const text = body

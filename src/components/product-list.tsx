@@ -2,6 +2,7 @@
 // product-list.tsx — The dashboard's product view (live Convex queries). Renders an account-wide pipeline funnel
 // (discovered → offers → outreach → adopters) over all products, then one card per product with its budgets,
 // a research control, a per-product pipeline strip, and quick links into each stage (report/outreach/improve/graph).
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -212,6 +213,19 @@ function PipelineStrip({ productId, stats }: { productId: Id<"products">; stats:
 function ResearchSection({ productId }: { productId: Id<"products"> }) {
   const report = useQuery(api.research.getLatestReport, { productId });
   const startResearch = useMutation(api.research.startResearch);
+  // Track "now" in state via async ticks so render stays pure (no Date.now() in render, no sync setState in the
+  // effect). A running report older than the 600s action cap was killed mid-flight — surface a restart.
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    const t0 = setTimeout(tick, 0);
+    const t = setInterval(tick, 30000);
+    return () => {
+      clearTimeout(t0);
+      clearInterval(t);
+    };
+  }, []);
+  const isStale = !!report && report.status === "running" && now > 0 && now - report.startedAt > 11 * 60 * 1000;
 
   if (report === undefined) {
     return <p className="text-xs text-zinc-400">Loading research status…</p>;
@@ -252,6 +266,14 @@ function ResearchSection({ productId }: { productId: Id<"products"> }) {
             style={{ width: `${report.progress}%` }}
           />
         </div>
+        {isStale && (
+          <button
+            onClick={() => startResearch({ productId })}
+            className="mt-3 text-xs font-medium text-indigo-600 hover:underline"
+          >
+            Taking too long? Restart research
+          </button>
+        )}
       </div>
     );
   }
