@@ -7,6 +7,12 @@ even writes your launch — all from a single onboarding form.
 
 > Built for the **YC AI Growth Hackathon by Orange Slice**. Sponsors used: **OpenAI · Convex · Fiber AI · Orange Slice**.
 
+## 🎥 Demo
+
+[![Watch the DevGraph demo](https://img.youtube.com/vi/llh4sWnKATo/maxresdefault.jpg)](https://youtu.be/llh4sWnKATo)
+
+▶ **[Watch the full demo on YouTube](https://youtu.be/llh4sWnKATo)** — the entire growth loop, run live on Fiber AI.
+
 ---
 
 ## What it does
@@ -53,15 +59,16 @@ An account-wide **pipeline funnel** (discovered → offers → outreach → adop
 
 ## Screenshots
 
-Captured from the running app (Orange Slice as the demo product).
+Captured from the running app (demoed on **Fiber AI**).
 
 | | |
 |---|---|
-| **Landing**<br>![Landing](screenshots/landing.png) | **Onboarding** — one form, incl. the AI-agent docs link<br>![Onboarding](screenshots/onboarding.png) |
-| **Dashboard** — the live pipeline funnel<br>![Dashboard](screenshots/dashboard.png) | **Discovery** — real competitors + cited public feedback<br>![Report](screenshots/report-competitors.png) |
-| **B2B targets** — named accounts + a dated buying signal<br>![B2B](screenshots/report-b2b.png) | **Scored builders** — real people via GitHub + Fiber<br>![Builders](screenshots/report-builders.png) |
-| **Offers & outreach** — push to Orange Slice<br>![Outreach](screenshots/outreach.png) | **Retention signals** — Fiber Tracker, expansion vs churn<br>![Signals](screenshots/signals.png) |
-| **🚀 Viral launch** — hook + CAC projection<br>![Launch](screenshots/launch.png) | **Launch assets** — copy-ready, every channel<br>![Launch assets](screenshots/launch-assets.png) |
+| **Landing**<br>![Landing](assets/landing.png) | **Onboarding** — one form (incl. the AI-agent docs link)<br>![Onboarding](assets/onboarding.png) |
+| **Dashboard** — the live pipeline funnel<br>![Dashboard](assets/dashboard.png) | **Discovery** — real competitors + cited public feedback<br>![Discovery](assets/report-competitors.png) |
+| **B2B targets** — named accounts + a dated buying signal<br>![B2B](assets/report-b2b.png) | **Scored builders** — real people via GitHub + Fiber<br>![Builders](assets/report-builders.png) |
+| **Hackathon SDK scan** — who integrated your SDK, from code<br>![Hackathon scan](assets/hackathon-scan.png) | **Tech-ecosystem graph**<br>![Graph](assets/graph.png) |
+| **Acquisition** — AI offers + outreach → Orange Slice<br>![Outreach](assets/outreach.png) | **Retention** — Fiber Tracker signals (expansion vs churn)<br>![Signals](assets/signals.png) |
+| **Closing the loop** — feature suggestions for eng + GTM<br>![Improve](assets/improve.png) | **🚀 Viral launch** — hook + CAC projection<br>![Launch](assets/launch.png) |
 
 ---
 
