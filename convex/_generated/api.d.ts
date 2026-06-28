@@ -15,6 +15,7 @@ import type * as openai from "../openai.js";
 import type * as outreach from "../outreach.js";
 import type * as products from "../products.js";
 import type * as research from "../research.js";
+import type * as tracker from "../tracker.js";
 import type * as validators from "../validators.js";
 
 import type {
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   outreach: typeof outreach;
   products: typeof products;
   research: typeof research;
+  tracker: typeof tracker;
   validators: typeof validators;
 }>;
 

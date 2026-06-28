@@ -26,6 +26,7 @@ export default defineSchema({
     businessBudget: v.number(),
     salesNotes: v.optional(v.string()),
     offersGenerating: v.optional(v.boolean()),
+    trackerListId: v.optional(v.string()), // Fiber Tracker company-list id, once retention tracking is set up
   }).index("by_user", ["userId"]),
 
   // One discovery/research run for a product, filled in stage by stage as it grounds each section in real data.
@@ -94,6 +95,22 @@ export default defineSchema({
     hackathonUrl: v.string(),
     ourSdk: v.optional(v.array(v.string())),
     teams: v.optional(v.array(hackathonTeamValidator)),
+    createdAt: v.number(),
+  }).index("by_product", ["productId"]),
+
+  // One retention/expansion signal about a tracked target account (from Fiber Tracker): funding, hiring, tech
+  // added, headcount, news, layoffs. The feed is reactive; signals are polled in (button-only) and deduped by id.
+  signals: defineTable({
+    productId: v.id("products"),
+    userId: v.string(),
+    fiberSignalId: v.string(), // Fiber's signal id, used to dedupe on re-poll
+    signalType: v.string(), // raw rule type, e.g. "new_funding_round"
+    readableType: v.string(), // human label, e.g. "New funding round"
+    category: v.union(v.literal("expansion"), v.literal("risk"), v.literal("neutral")),
+    entityName: v.string(), // the tracked company/person the signal is about
+    summary: v.string(),
+    observedAt: v.string(), // ISO timestamp from Fiber
+    isDummy: v.boolean(), // true for fire-dummy TEST signals
     createdAt: v.number(),
   }).index("by_product", ["productId"]),
 });

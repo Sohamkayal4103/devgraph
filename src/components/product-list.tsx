@@ -199,6 +199,9 @@ function PipelineStrip({ productId, stats }: { productId: Id<"products">; stats:
         <Link href={`/graph/${productId}`} className="text-indigo-600 hover:underline">
           Graph →
         </Link>
+        <Link href={`/signals/${productId}`} className="text-indigo-600 hover:underline">
+          Signals →
+        </Link>
       </div>
     </div>
   );

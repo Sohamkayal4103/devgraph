@@ -103,3 +103,16 @@ export const hackathonTeamValidator = v.object({
   ),
   detail: v.string(),
 });
+
+// One retention/expansion signal mapped from a Fiber Tracker signal. The insert mutation accepts this shape;
+// productId/userId/createdAt are added server-side. Must mirror the `signals` table fields in schema.ts.
+export const signalValidator = v.object({
+  fiberSignalId: v.string(),
+  signalType: v.string(),
+  readableType: v.string(),
+  category: v.union(v.literal("expansion"), v.literal("risk"), v.literal("neutral")),
+  entityName: v.string(),
+  summary: v.string(),
+  observedAt: v.string(),
+  isDummy: v.boolean(),
+});
