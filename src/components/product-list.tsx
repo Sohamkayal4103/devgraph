@@ -1,15 +1,32 @@
 "use client";
-// product-list.tsx — Lists the signed-in user's products from Convex (a live query) as cards. Each card has a
-// delete action and a discovery/research section (begin research, live progress, view report).
+// product-list.tsx — The dashboard's product view (live Convex queries). Renders an account-wide pipeline funnel
+// (discovered → offers → outreach → adopters) over all products, then one card per product with its budgets,
+// a research control, a per-product pipeline strip, and quick links into each stage (report/outreach/improve/graph).
 import Link from "next/link";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Doc, Id } from "../../convex/_generated/dataModel";
 
-// ProductList: renders one card per saved product (live from Convex), or a prompt to add the first one. No
-// params. Rendered by the dashboard page.
+// Per-product pipeline stats, a structural subset of one api.dashboard.overview row.
+type PipelineStats = {
+  productId: Id<"products">;
+  reportId: Id<"reports"> | null;
+  discoveryStatus: string;
+  builders: number;
+  competitors: number;
+  teamsScanned: number;
+  integrated: number;
+  offersTotal: number;
+  offersSelected: number;
+  messages: number;
+  featuresCount: number;
+};
+
+// ProductList: the account funnel + one card per saved product (all live from Convex), or a prompt to add the
+// first one. No params. Rendered by the dashboard page.
 export function ProductList() {
   const products = useQuery(api.products.list);
+  const overview = useQuery(api.dashboard.overview);
   const removeProduct = useMutation(api.products.remove);
 
   if (products === undefined) {
@@ -30,22 +47,68 @@ export function ProductList() {
     );
   }
 
+  const statsById = new Map<string, PipelineStats>((overview?.rows ?? []).map((r) => [r.productId, r]));
+
   return (
-    <div className="flex flex-col gap-4">
-      {products.map((product) => (
-        <ProductCard
-          key={product._id}
-          product={product}
-          onDelete={() => removeProduct({ id: product._id })}
-        />
-      ))}
+    <div className="flex flex-col gap-6">
+      {overview && <PipelineFunnel agg={overview.agg} />}
+      <div className="flex flex-col gap-4">
+        {products.map((product) => (
+          <ProductCard
+            key={product._id}
+            product={product}
+            stats={statsById.get(product._id)}
+            onDelete={() => removeProduct({ id: product._id })}
+          />
+        ))}
+      </div>
     </div>
   );
 }
 
-// ProductCard: one product's details, budgets, a delete button, and its research section. Params: product =
-// the Convex document, onDelete = handler to remove it. Called by ProductList for each item.
-function ProductCard({ product, onDelete }: { product: Doc<"products">; onDelete: () => void }) {
+// PipelineFunnel: the account-wide scoreboard — four pipeline stages with their running totals. Params: agg =
+// the aggregate from api.dashboard.overview. Called by ProductList.
+function PipelineFunnel({
+  agg,
+}: {
+  agg: { discovered: number; offers: number; messages: number; integrated: number };
+}) {
+  const stages = [
+    { label: "Prospects discovered", value: agg.discovered, hint: "builders + hackathon teams" },
+    { label: "Offers selected", value: agg.offers, hint: "deals you chose to run" },
+    { label: "Outreach drafted", value: agg.messages, hint: "messages ready to send" },
+    { label: "Adopters confirmed", value: agg.integrated, hint: "teams found using your SDK" },
+  ];
+  return (
+    <div className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+      <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">Your growth pipeline</p>
+      <div className="mt-3 flex flex-wrap items-stretch gap-2">
+        {stages.map((s, i) => (
+          <div key={s.label} className="flex items-center gap-2">
+            <div className="min-w-[140px] rounded-lg bg-zinc-50 px-4 py-3 dark:bg-zinc-900">
+              <div className="text-2xl font-semibold tabular-nums">{s.value}</div>
+              <div className="mt-0.5 text-xs font-medium text-zinc-700 dark:text-zinc-300">{s.label}</div>
+              <div className="text-[11px] text-zinc-400">{s.hint}</div>
+            </div>
+            {i < stages.length - 1 && <span className="text-zinc-300 dark:text-zinc-700">→</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ProductCard: one product's details, budgets, research control, pipeline strip, and stage links. Params:
+// product = the Convex doc, stats = its pipeline counts (undefined while loading), onDelete. Called by ProductList.
+function ProductCard({
+  product,
+  stats,
+  onDelete,
+}: {
+  product: Doc<"products">;
+  stats: PipelineStats | undefined;
+  onDelete: () => void;
+}) {
   return (
     <div className="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800">
       <div className="flex items-start justify-between gap-4">
@@ -78,8 +141,56 @@ function ProductCard({ product, onDelete }: { product: Doc<"products">; onDelete
         <Stat label="Budget / business" value={product.businessBudget} />
       </div>
 
+      {stats && (stats.builders > 0 || stats.teamsScanned > 0 || stats.offersTotal > 0 || stats.messages > 0) && (
+        <PipelineStrip productId={product._id} stats={stats} />
+      )}
+
       <div className="mt-6 border-t border-zinc-100 pt-4 dark:border-zinc-800/60">
         <ResearchSection productId={product._id} />
+      </div>
+    </div>
+  );
+}
+
+// PipelineStrip: a product's per-stage counts as chips, plus quick links into each stage. Params: productId,
+// stats = the product's pipeline counts. Called by ProductCard once any stage has data.
+function PipelineStrip({ productId, stats }: { productId: Id<"products">; stats: PipelineStats }) {
+  const chips = [
+    { label: "Builders", value: stats.builders },
+    { label: "Teams scanned", value: stats.teamsScanned },
+    { label: "Integrated", value: stats.integrated, accent: stats.integrated > 0 },
+    { label: "Offers", value: `${stats.offersSelected}/${stats.offersTotal}` },
+    { label: "Messages", value: stats.messages },
+  ];
+  return (
+    <div className="mt-5 rounded-lg bg-zinc-50 p-4 dark:bg-zinc-900/60">
+      <div className="flex flex-wrap gap-x-5 gap-y-2">
+        {chips.map((c) => (
+          <div key={c.label} className="text-sm">
+            <span
+              className={`font-semibold tabular-nums ${c.accent ? "text-green-600" : ""}`}
+            >
+              {c.value}
+            </span>{" "}
+            <span className="text-zinc-500">{c.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-3 text-sm font-medium">
+        {stats.reportId && (
+          <Link href={`/report/${stats.reportId}`} className="text-indigo-600 hover:underline">
+            Report →
+          </Link>
+        )}
+        <Link href={`/outreach/${productId}`} className="text-indigo-600 hover:underline">
+          Outreach →
+        </Link>
+        <Link href={`/improve/${productId}`} className="text-indigo-600 hover:underline">
+          Improve →
+        </Link>
+        <Link href={`/graph/${productId}`} className="text-indigo-600 hover:underline">
+          Graph →
+        </Link>
       </div>
     </div>
   );

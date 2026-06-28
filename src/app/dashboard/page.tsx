@@ -9,7 +9,7 @@ import { ProductList } from "@/components/product-list";
 export default async function DashboardPage() {
   const user = await currentUser();
   return (
-    <div className="mx-auto max-w-3xl px-6 py-16">
+    <div className="mx-auto max-w-4xl px-6 py-16">
       <h1 className="text-3xl font-semibold tracking-tight">
         Welcome back{user?.firstName ? `, ${user.firstName}` : ""}
       </h1>
@@ -29,7 +29,8 @@ export default async function DashboardPage() {
       </div>
 
       <p className="mt-8 text-sm text-zinc-500">
-        Next: DevGraph runs the research phase on each product to find the builders who&apos;ll adopt it.
+        Each product flows through the pipeline: discovery &amp; research → offers → outreach → adoption. Open a
+        product&apos;s stage links to drive it forward.
       </p>
     </div>
   );
