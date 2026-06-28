@@ -144,13 +144,7 @@ function ProductCard({
         <Stat label="Budget / business" value={product.businessBudget} />
       </div>
 
-      {stats &&
-        (stats.builders > 0 ||
-          stats.businesses > 0 ||
-          stats.universities > 0 ||
-          stats.teamsScanned > 0 ||
-          stats.offersTotal > 0 ||
-          stats.messages > 0) && <PipelineStrip productId={product._id} stats={stats} />}
+      {stats && <PipelineStrip productId={product._id} stats={stats} />}
 
       <div className="mt-6 border-t border-zinc-100 pt-4 dark:border-zinc-800/60">
         <ResearchSection productId={product._id} />
@@ -171,21 +165,26 @@ function PipelineStrip({ productId, stats }: { productId: Id<"products">; stats:
     { label: "Offers", value: `${stats.offersSelected}/${stats.offersTotal}` },
     { label: "Messages", value: stats.messages },
   ];
+  const hasData =
+    stats.builders > 0 || stats.businesses > 0 || stats.universities > 0 ||
+    stats.teamsScanned > 0 || stats.offersTotal > 0 || stats.messages > 0;
   return (
     <div className="mt-5 rounded-lg bg-zinc-50 p-4 dark:bg-zinc-900/60">
-      <div className="flex flex-wrap gap-x-5 gap-y-2">
-        {chips.map((c) => (
-          <div key={c.label} className="text-sm">
-            <span
-              className={`font-semibold tabular-nums ${c.accent ? "text-green-600" : ""}`}
-            >
-              {c.value}
-            </span>{" "}
-            <span className="text-zinc-500">{c.label}</span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-3 flex flex-wrap gap-3 text-sm font-medium">
+      {hasData && (
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+          {chips.map((c) => (
+            <div key={c.label} className="text-sm">
+              <span
+                className={`font-semibold tabular-nums ${c.accent ? "text-green-600" : ""}`}
+              >
+                {c.value}
+              </span>{" "}
+              <span className="text-zinc-500">{c.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className={`flex flex-wrap gap-3 text-sm font-medium ${hasData ? "mt-3" : ""}`}>
         {stats.reportId && (
           <Link href={`/report/${stats.reportId}`} className="text-indigo-600 hover:underline">
             Report →
@@ -202,6 +201,9 @@ function PipelineStrip({ productId, stats }: { productId: Id<"products">; stats:
         </Link>
         <Link href={`/signals/${productId}`} className="text-indigo-600 hover:underline">
           Signals →
+        </Link>
+        <Link href={`/launch/${productId}`} className="text-indigo-600 hover:underline">
+          Launch →
         </Link>
       </div>
     </div>

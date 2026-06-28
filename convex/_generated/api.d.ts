@@ -11,6 +11,7 @@
 import type * as dashboard from "../dashboard.js";
 import type * as hackathon from "../hackathon.js";
 import type * as improve from "../improve.js";
+import type * as launch from "../launch.js";
 import type * as openai from "../openai.js";
 import type * as outreach from "../outreach.js";
 import type * as products from "../products.js";
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   dashboard: typeof dashboard;
   hackathon: typeof hackathon;
   improve: typeof improve;
+  launch: typeof launch;
   openai: typeof openai;
   outreach: typeof outreach;
   products: typeof products;

@@ -26,7 +26,11 @@ export async function openAIChat<T>(prompt: string, schema: object, model: strin
       response_format: { type: "json_schema", json_schema: { name: "result", strict: true, schema } },
     }),
   });
-  if (!res.ok) throw new Error(`OpenAI request failed (${res.status}): ${await res.text()}`);
+  if (!res.ok) {
+    // Log the upstream body server-side only; never surface a raw third-party response body to the client.
+    console.error(`OpenAI request failed (${res.status}): ${await res.text()}`);
+    throw new Error(`OpenAI request failed (${res.status})`);
+  }
   const data = await res.json();
   return JSON.parse(data.choices[0].message.content) as T;
 }

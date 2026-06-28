@@ -116,3 +116,31 @@ export const signalValidator = v.object({
   observedAt: v.string(),
   isDummy: v.boolean(),
 });
+
+// One copy-ready launch asset for a single channel of a viral launch campaign.
+export const launchChannelValidator = v.object({
+  channel: v.string(), // id: x_thread | linkedin | show_hn | reddit | product_hunt | cold_email | ugc_video
+  label: v.string(), // human label, e.g. "X / Twitter launch thread"
+  audience: v.string(), // exact communities/people, e.g. "r/SaaS, r/Entrepreneur"
+  content: v.string(), // the actual copy-paste asset
+  tip: v.string(), // one concrete posting tip (timing / seeding / who to tag)
+});
+
+// One step in the coordinated launch-day-through-week sequence.
+export const launchStepValidator = v.object({
+  when: v.string(), // e.g. "Launch day · 9:00 AM PT"
+  channel: v.string(), // which channel/asset this step uses
+  action: v.string(), // what to do
+});
+
+// The transparent reach -> signups -> customers -> CAC projection for the launch, tied to the CAC budgets.
+export const launchProjectionValidator = v.object({
+  assumptions: v.string(), // the per-channel reach + conversion assumptions, stated openly
+  reachLow: v.number(),
+  reachHigh: v.number(),
+  signups: v.number(),
+  customers: v.number(),
+  blendedCac: v.number(), // estimated $ to acquire one paying customer via this organic launch
+  payback: v.string(),
+  notes: v.string(),
+});
